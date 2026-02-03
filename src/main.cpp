@@ -121,7 +121,7 @@ void onButtonLongPressStart() {
 
 #if defined(BUTTON_PIN) && (USE_DISPLAY || USE_OLED_DISPLAY || USE_EINK_DISPLAY)
 /**
- * Dedicated button handling task
+ * Dedicated button handling task (with display)
  * Runs at higher priority than mining to ensure responsive UI
  */
 void button_task(void *param) {
@@ -129,6 +129,60 @@ void button_task(void *param) {
     for (;;) {
         button.tick();
         vTaskDelay(pdMS_TO_TICKS(10));  // 10ms polling = responsive buttons
+    }
+}
+
+#elif defined(BUTTON_PIN)
+/**
+ * Headless button handling task
+ * Simple long-press detection for factory reset (no OneButton/display dependencies)
+ * Hold button for 5 seconds to trigger factory reset
+ */
+void button_task(void *param) {
+    Serial.println("[BUTTON] Headless button task started");
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    unsigned long pressStart = 0;
+    bool wasPressed = false;
+    const unsigned long RESET_HOLD_MS = 5000;  // 5 seconds to trigger reset
+
+    for (;;) {
+        bool pressed = (digitalRead(BUTTON_PIN) == LOW);
+
+        if (pressed && !wasPressed) {
+            // Button just pressed
+            pressStart = millis();
+            wasPressed = true;
+            Serial.println("[BUTTON] Press detected - hold 5s for factory reset");
+        } else if (pressed && wasPressed) {
+            // Button held - check duration
+            unsigned long held = millis() - pressStart;
+            if (held >= RESET_HOLD_MS) {
+                Serial.println("[RESET] *** FACTORY RESET TRIGGERED ***");
+
+                // Clear NVS
+                Preferences prefs;
+                if (prefs.begin("sparkminer", false)) {
+                    prefs.clear();
+                    prefs.end();
+                    Serial.println("[RESET] NVS cleared");
+                }
+
+                // Clear WiFi settings
+                WiFi.disconnect(true, true);
+                Serial.println("[RESET] WiFi settings cleared");
+
+                delay(500);
+                Serial.println("[RESET] Restarting...");
+                ESP.restart();
+            }
+        } else if (!pressed && wasPressed) {
+            // Button released before 5 seconds
+            Serial.println("[BUTTON] Released - normal operation continues");
+            wasPressed = false;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));  // 50ms polling for headless
     }
 }
 #endif
@@ -260,10 +314,14 @@ void checkFactoryReset() {
  */
 void setup() {
     Serial.begin(115200);
-    
-    // Wait for USB CDC to be ready
-    delay(3000);
-    while (!Serial) { delay(10); }  // Extra wait for USB enumeration
+
+    // Wait for USB CDC to be ready (with timeout for headless operation)
+    // On ESP32-S3, Serial only becomes true when USB host enumerates CDC
+    // Without timeout, device would block forever if no USB connected
+    unsigned long serialWaitStart = millis();
+    while (!Serial && (millis() - serialWaitStart < 5000)) {
+        delay(10);
+    }
     Serial.flush();
     
     // Debug output  
@@ -433,6 +491,17 @@ void setupTasks() {
             5,              // Priority 5: above miner0 (1), below miner1 (19)
             &buttonTask,
             0               // Core 0 with other UI tasks
+        );
+    #elif defined(BUTTON_PIN)
+        // Headless button task for factory reset (Issue #15 fix)
+        xTaskCreatePinnedToCore(
+            button_task,
+            "Button",
+            3072,           // Smaller stack for headless (no display calls)
+            NULL,
+            2,              // Low priority, just needs to run occasionally
+            &buttonTask,
+            0
         );
     #endif
 
