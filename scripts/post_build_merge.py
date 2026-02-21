@@ -85,6 +85,9 @@ def get_friendly_name(env_name):
         'esp32-s3-devkit': 'esp32-s3-devkit',
         'esp32-headless': 'esp32-headless',
         'esp32-s3-mini': 'esp32-s3-mini',
+        'lilygo-t-display-s3': 'lilygo-t-display-s3',
+        'lilygo-t-display-v1': 'lilygo-t-display-v1',
+        'esp32-headless-led': 'esp32-headless-led',
     }
     return friendly_names.get(env_name, env_name)
 

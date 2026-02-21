@@ -779,6 +779,14 @@ class DevTool:
         results = {}
         start_time = time.time()
 
+        # Delete firmware.bin from PIO build cache for each board to force
+        # re-linking. This ensures post_build_merge.py fires and copies
+        # binaries into firmware/{version}/ even when sources are unchanged.
+        for board in boards:
+            fw_bin = self.script_dir / ".pio" / "build" / board.env / "firmware.bin"
+            if fw_bin.exists():
+                fw_bin.unlink()
+
         if parallel:
             with ThreadPoolExecutor(max_workers=actual_workers) as executor:
                 futures = {executor.submit(self.build, b, False): b for b in boards}
@@ -798,6 +806,18 @@ class DevTool:
         success_count = sum(1 for v in results.values() if v)
         fail_count = len(results) - success_count
 
+        # Verify firmware files were collected into the version directory
+        fw_version_dir = self.get_firmware_dir() / version
+        missing = []
+        for board in boards:
+            if results.get(board.key):
+                factory = fw_version_dir / f"{board.key}_factory.bin"
+                if not factory.exists():
+                    # Try env name fallback
+                    factory = fw_version_dir / f"{board.env}_factory.bin"
+                if not factory.exists():
+                    missing.append(board.key)
+
         print(f"\n{c('=' * 60, Colors.CYAN)}")
         print(f"{c(' Build Summary', Colors.BOLD)}")
         print(f"{c('=' * 60, Colors.CYAN)}")
@@ -805,6 +825,11 @@ class DevTool:
         print(f"  Success: {c(str(success_count), Colors.GREEN)}")
         if fail_count:
             print(f"  Failed:  {c(str(fail_count), Colors.RED)}")
+        if missing:
+            print(f"  {c('[WARN]', Colors.YELLOW)} Missing firmware for: {', '.join(missing)}")
+        else:
+            fw_count = len(list(fw_version_dir.glob("*.bin"))) if fw_version_dir.exists() else 0
+            print(f"  Output:  {fw_count} files in {self.config.firmware_dir}/{version}/")
         print(f"{c('=' * 60, Colors.CYAN)}")
 
         return results
