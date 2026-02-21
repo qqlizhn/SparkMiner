@@ -1,4 +1,4 @@
-# SparkMiner v2.9.2
+# SparkMiner v2.9.5
 
 **High-performance Bitcoin solo miner for ESP32, ESP32-S3 & ESP32-C3**
 
@@ -484,9 +484,13 @@ SparkMiner uses both ESP32 cores efficiently:
 - **Core 1 (High Priority, 19):** Pipelined hardware SHA-256 mining using direct register access and assembly optimization
 - **Core 0 (Low Priority, 1):** WiFi, Stratum protocol, display updates, and software SHA-256 backup mining
 
-**v2.9.2 Features & Architecture:**
+**v2.9.5 Features & Architecture:**
+- **Job ID Fix:** Increased job ID buffer to 32 chars, fixing 100% rejection on some pools.
+- **Screen Auto-Off:** Configurable screen timeout (30s–5m) with button wake.
+- **GPIO LED Status:** Headless boards now blink the onboard LED for mining status.
+- **WiFi Robustness:** Disabled power save, faster reconnect, disconnect reason logging.
+- **Display Fix:** Clock screen date no longer superimposes on redraw.
 - **Stratum Proxy Stats:** Pool hashrate, worker hashrate, difficulty adjustment via proxy.
-- **Enhanced Display:** Workers panel shows combined hashrate, Retarget shows difficulty progress.
 - **Persistent Stats:** Lifetime mining history preserved via NVS and SD card backups.
 - **Display Support:** OLED (SSD1306) and LCD (ILI9341/ST7789) via abstraction layer.
 - **Multi-Board Support:** ESP32-C3, ESP32-S3, and Headless with LED status.
