@@ -243,6 +243,11 @@
 
     #define USE_DISPLAY 0
 
+    // GPIO LED status (simple on/off, no FastLED needed)
+    #define USE_LED_STATUS 1
+    #define GPIO_LED_PIN 2          // Onboard blue LED
+    #define GPIO_LED_ACTIVE_LOW 0   // Most boards: HIGH = on
+
     #ifndef BUTTON_PIN
         #define BUTTON_PIN 0
     #endif

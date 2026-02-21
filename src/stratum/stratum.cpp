@@ -525,9 +525,9 @@ void stratum_task(void *param) {
                 Serial.println("[WIFI] Connection lost, attempting reconnect...");
             }
 
-            // Calculate exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s max
-            uint32_t backoffMs = 1000 * (1 << min(s_wifiReconnectAttempts, (uint32_t)5));
-            if (backoffMs > 30000) backoffMs = 30000;
+            // Calculate exponential backoff: 1s, 2s, 4s, 8s, 15s max
+            uint32_t backoffMs = 1000 * (1 << min(s_wifiReconnectAttempts, (uint32_t)4));
+            if (backoffMs > 15000) backoffMs = 15000;
 
             if (millis() - s_lastWifiReconnectAttempt >= backoffMs) {
                 s_wifiReconnectAttempts++;

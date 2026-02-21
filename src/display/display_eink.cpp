@@ -546,5 +546,9 @@ void display_show_reset_complete() {
     eink_display_show_reset_complete();
 }
 
+void display_set_backlight_off() {}
+void display_set_backlight_on() {}
+bool display_is_backlight_off() { return false; }
+
 #endif // USE_EINK_DISPLAY
 

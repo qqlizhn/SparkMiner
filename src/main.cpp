@@ -49,13 +49,23 @@ volatile bool systemReady = false;
 #if defined(BUTTON_PIN) && (USE_DISPLAY || USE_OLED_DISPLAY || USE_EINK_DISPLAY)
 OneButton button(BUTTON_PIN, true, true);  // active low, enable pullup
 
-// Single click: cycle screens
+// Single click: wake screen if off, otherwise cycle screens
 void onButtonClick() {
+    monitor_reset_activity();
+    if (display_is_backlight_off()) {
+        display_set_backlight_on();
+        return;  // First click just wakes the screen
+    }
     display_next_screen();
 }
 
 // Double click: cycle screen rotation (0->1->2->3->0)
 void onButtonDoubleClick() {
+    monitor_reset_activity();
+    if (display_is_backlight_off()) {
+        display_set_backlight_on();
+        return;
+    }
     Serial.println("[BUTTON] Double-click detected - cycling rotation");
     uint8_t newRotation = display_flip_rotation();
     // Save to NVS
@@ -67,6 +77,11 @@ void onButtonDoubleClick() {
 
 // Triple click: toggle color inversion
 void onButtonMultiClick() {
+    monitor_reset_activity();
+    if (display_is_backlight_off()) {
+        display_set_backlight_on();
+        return;
+    }
     int clicks = button.getNumberClicks();
     if (clicks == 3) {
         Serial.println("[BUTTON] Triple-click detected - toggling color theme");
@@ -80,6 +95,11 @@ void onButtonMultiClick() {
 
 // Long press: factory reset with 3-second visual countdown
 void onButtonLongPressStart() {
+    monitor_reset_activity();
+    if (display_is_backlight_off()) {
+        display_set_backlight_on();
+        return;
+    }
     Serial.println("[RESET] Long press detected - starting countdown...");
 
     // Visual countdown on display
@@ -383,6 +403,15 @@ void setup() {
     wifi_manager_init();
     Serial.println("[INIT] Starting WiFi...");
     wifi_manager_start();
+
+    // Register WiFi event handlers for diagnostics
+    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+        Serial.printf("[WIFI] Disconnected, reason: %d\n", info.wifi_sta_disconnected.reason);
+    }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+
+    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+        Serial.printf("[WIFI] Connected, channel: %d\n", WiFi.channel());
+    }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
 
     // Initialize monitor (live stats - display already initialized)
     monitor_init();

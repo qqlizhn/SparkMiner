@@ -9,7 +9,7 @@
 #include <board_config.h>
 #include "led_status.h"
 
-#if USE_LED_STATUS
+#if USE_LED_STATUS && defined(RGB_LED_PIN)
 
 #include <FastLED.h>
 
@@ -221,6 +221,134 @@ void led_status_toggle() {
     s_enabled = !s_enabled;
     if (!s_enabled) {
         FastLED.clear(true);
+    }
+    Serial.printf("[LED] Status feedback %s\n", s_enabled ? "enabled" : "disabled");
+}
+
+bool led_status_is_enabled() {
+    return s_enabled;
+}
+
+#elif USE_LED_STATUS && defined(GPIO_LED_PIN)
+
+// ============================================================
+// GPIO LED Mode - Simple on/off blink patterns (no FastLED)
+// ============================================================
+
+static led_status_t s_currentStatus = LED_STATUS_OFF;
+static led_status_t s_previousStatus = LED_STATUS_OFF;
+static bool s_enabled = true;
+static bool s_ledState = false;
+static uint32_t s_lastToggle = 0;
+static uint32_t s_flashStart = 0;
+
+static void gpioLedWrite(bool on) {
+    s_ledState = on;
+    #if GPIO_LED_ACTIVE_LOW
+        digitalWrite(GPIO_LED_PIN, on ? LOW : HIGH);
+    #else
+        digitalWrite(GPIO_LED_PIN, on ? HIGH : LOW);
+    #endif
+}
+
+void led_status_init() {
+    pinMode(GPIO_LED_PIN, OUTPUT);
+    gpioLedWrite(false);
+    s_currentStatus = LED_STATUS_BOOT;
+    s_enabled = true;
+    Serial.printf("[LED] GPIO status driver initialized (pin %d)\n", GPIO_LED_PIN);
+}
+
+void led_status_set(led_status_t status) {
+    if (status != s_currentStatus) {
+        s_previousStatus = s_currentStatus;
+        s_currentStatus = status;
+    }
+}
+
+led_status_t led_status_get() {
+    return s_currentStatus;
+}
+
+void led_status_share_found() {
+    s_previousStatus = s_currentStatus;
+    s_currentStatus = LED_STATUS_SHARE_FOUND;
+    s_flashStart = millis();
+    gpioLedWrite(true);
+}
+
+void led_status_block_found() {
+    s_previousStatus = s_currentStatus;
+    s_currentStatus = LED_STATUS_BLOCK_FOUND;
+    s_flashStart = millis();
+    gpioLedWrite(true);
+}
+
+void led_status_update() {
+    if (!s_enabled) return;
+
+    uint32_t now = millis();
+
+    // Handle temporary states
+    if (s_currentStatus == LED_STATUS_SHARE_FOUND) {
+        if (now - s_flashStart >= 500) {
+            s_currentStatus = s_previousStatus;
+        } else {
+            return;  // Keep LED on during flash
+        }
+    }
+
+    if (s_currentStatus == LED_STATUS_BLOCK_FOUND) {
+        if (now - s_flashStart >= 3000) {
+            s_currentStatus = s_previousStatus;
+        } else {
+            // Fast blink for celebration
+            if (now - s_lastToggle >= 100) {
+                gpioLedWrite(!s_ledState);
+                s_lastToggle = now;
+            }
+            return;
+        }
+    }
+
+    // Blink patterns based on status
+    uint32_t onMs, offMs;
+    switch (s_currentStatus) {
+        case LED_STATUS_OFF:
+            gpioLedWrite(false);
+            return;
+        case LED_STATUS_BOOT:
+            gpioLedWrite(true);
+            return;
+        case LED_STATUS_AP_MODE:
+        case LED_STATUS_CONNECTING:
+            onMs = 1000; offMs = 1000;  // Slow blink
+            break;
+        case LED_STATUS_MINING:
+            onMs = 200; offMs = 800;  // Fast blink
+            break;
+        case LED_STATUS_ERROR:
+            gpioLedWrite(true);  // Solid on
+            return;
+        default:
+            return;
+    }
+
+    // Toggle based on pattern
+    uint32_t elapsed = now - s_lastToggle;
+    if (s_ledState && elapsed >= onMs) {
+        gpioLedWrite(false);
+        s_lastToggle = now;
+    } else if (!s_ledState && elapsed >= offMs) {
+        gpioLedWrite(true);
+        s_lastToggle = now;
+    }
+}
+
+void led_status_toggle() {
+    s_enabled = !s_enabled;
+    if (!s_enabled) {
+        gpioLedWrite(false);
     }
     Serial.printf("[LED] Status feedback %s\n", s_enabled ? "enabled" : "disabled");
 }

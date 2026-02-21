@@ -135,8 +135,8 @@ Find your board below and download the matching firmware from [Releases](https:/
 
 | Your Board | Firmware File | Notes |
 |------------|---------------|-------|
-| **ESP32 DevKit** | `esp32-headless_firmware.bin` | Any generic ESP32 board |
-| **ESP32-WROOM-32** | `esp32-headless_firmware.bin` | Headless (serial output only) |
+| **ESP32 DevKit** | `esp32-headless_firmware.bin` | Any generic ESP32, GPIO LED status |
+| **ESP32-WROOM-32** | `esp32-headless_firmware.bin` | GPIO LED on pin 2 |
 | **NodeMCU ESP32** | `esp32-headless_firmware.bin` | Use headless firmware |
 
 ### File Types
@@ -164,7 +164,7 @@ Find your board below and download the matching firmware from [Releases](https:/
 | Freenove ESP32-S3 | ✅ Full | 2.8" IPS with SD_MMC |
 | ESP32-S3/C3 + OLED | ✅ Full | 128x64 SSD1306 I2C |
 | ESP32-S3/C3 Mini | ✅ Full | RGB LED status |
-| ESP32 Headless | ✅ Full | Serial output only |
+| ESP32 Headless | ✅ Full | GPIO LED status indicator |
 | LILYGO T-Display S3 | ❌ None | Not yet supported |
 | LILYGO T-Display V1 | ❌ None | Not yet supported |
 | ESP32-S2 boards | ❌ None | Single-core not supported |
@@ -184,7 +184,8 @@ Find your board below and download the matching firmware from [Releases](https:/
 - **Display:** TFT (ILI9341/ST7789) or OLED (SSD1306)
 - **Storage:** MicroSD card slot (select boards)
 - **Connectivity:** WiFi 802.11 b/g/n
-- **RGB LED:** Status indicator (headless boards)
+- **RGB LED:** Status indicator (S3 Mini, Headless-LED boards)
+- **GPIO LED:** Simple blink status indicator (Headless boards, pin 2)
 - **Button:** Boot button for interaction
 
 ---
@@ -222,6 +223,7 @@ Create a `config.json` file on a FAT32-formatted microSD card:
 | `worker_name` | No | `SparkMiner` | Identifier shown on pool dashboard |
 | `pool_password` | No | `x` | Pool password (usually `x`) |
 | `brightness` | No | `100` | Display brightness (0-100) |
+| `screen_timeout` | No | `0` | Screen auto-off timeout in seconds (0=never, 30, 60, 120, 300) |
 | `rotation` | No | `1` | Screen rotation (0-3) |
 | `invert_colors` | No | `false` | Invert display colors |
 | `backup_pool_url` | No | - | Failover pool hostname |
@@ -393,7 +395,7 @@ The BOOT button (closest to USB-C) provides these actions:
 | **Long press (1.5s)** | Factory reset | 3-second countdown, release to cancel |
 | **Hold at boot (5s)** | Factory reset | Alternative if UI is unresponsive |
 
-> **Note:** Buttons remain responsive during mining thanks to a dedicated FreeRTOS task.
+> **Note:** Buttons remain responsive during mining thanks to a dedicated FreeRTOS task. If screen timeout is enabled, the first button press wakes the display instead of performing its normal action.
 
 ---
 
@@ -501,7 +503,7 @@ SparkMiner uses both ESP32 cores efficiently:
 | Problem | Solution |
 |---------|----------|
 | Won't connect to WiFi | Check SSID/password, ensure 2.4GHz network (not 5GHz) |
-| Keeps disconnecting | Move closer to router, check for interference |
+| Keeps disconnecting | Check serial log for `[WIFI] Disconnected, reason: X` - WiFi power save is disabled automatically to improve stability with routers that have aggressive WPA rekey |
 | AP mode not appearing | Hold BOOT 5s at power-on, or long-press during operation |
 
 ### Display Issues
