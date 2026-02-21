@@ -129,6 +129,10 @@ void display_show_reset_complete() {
     Serial.println("[RESET] Complete");
 }
 
+void display_set_backlight_off() {}
+void display_set_backlight_on() {}
+bool display_is_backlight_off() { return false; }
+
 #else
 
 // Headless builds (no display, no LED): Serial output only
@@ -172,5 +176,9 @@ void display_show_reset_countdown(int seconds) {
 void display_show_reset_complete() {
     Serial.println("[RESET] Factory reset complete, restarting...");
 }
+
+void display_set_backlight_off() {}
+void display_set_backlight_on() {}
+bool display_is_backlight_off() { return false; }
 
 #endif

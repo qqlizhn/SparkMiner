@@ -36,10 +36,12 @@ static WiFiManagerParameter* s_paramDifficulty = NULL;
 static char s_rotationHtml[1024];
 static char s_invertHtml[512];
 static char s_brightnessHtml[512];
+static char s_screenTimeoutHtml[512];
 static char s_difficultyHtml[768];
 static WiFiManagerParameter* s_paramRotation = NULL;
 static WiFiManagerParameter* s_paramTimezone = NULL;
 static WiFiManagerParameter* s_paramInvert = NULL;
+static WiFiManagerParameter* s_paramScreenTimeout = NULL;
 
 // Stats API parameters
 static WiFiManagerParameter* s_paramStatsHeader = NULL;
@@ -113,6 +115,9 @@ static void saveParamsCallback() {
     }
     if (s_paramInvert) {
         config->invertColors = (atoi(s_paramInvert->getValue()) == 1);
+    }
+    if (s_paramScreenTimeout) {
+        config->screenTimeout = atoi(s_paramScreenTimeout->getValue());
     }
 
     // Stats API
@@ -215,6 +220,23 @@ void wifi_manager_init() {
     static char s_bufBrightness[8];
     snprintf(s_bufBrightness, sizeof(s_bufBrightness), "%d", config->brightness);
     s_paramBrightness = new WiFiManagerParameter("bright", "Brightness", s_bufBrightness, 4, s_brightnessHtml);
+    // Screen Timeout dropdown
+    const int timeoutValues[] = {0, 30, 60, 120, 300};
+    const char* timeoutLabels[] = {"Never", "30 seconds", "1 minute", "2 minutes", "5 minutes"};
+    strcpy(s_screenTimeoutHtml, "<br><select name='scrn_to'>");
+    for(int i=0; i<5; i++) {
+        char opt[80];
+        sprintf(opt, "<option value='%d'%s>%s</option>",
+            timeoutValues[i],
+            (config->screenTimeout == timeoutValues[i]) ? " selected" : "",
+            timeoutLabels[i]);
+        strcat(s_screenTimeoutHtml, opt);
+    }
+    strcat(s_screenTimeoutHtml, "</select>");
+    static char s_bufScreenTimeout[8];
+    snprintf(s_bufScreenTimeout, sizeof(s_bufScreenTimeout), "%d", config->screenTimeout);
+    s_paramScreenTimeout = new WiFiManagerParameter("scrn_to", "Screen Timeout", s_bufScreenTimeout, 4, s_screenTimeoutHtml);
+
     // Difficulty dropdown (common solo mining values)
     const double diffValues[] = {0.00001, 0.0001, 0.001, 0.0014, 0.01, 0.1, 1.0};
     const char* diffLabels[] = {"0.00001 (Easiest)", "0.0001", "0.001", "0.0014 (Default)", "0.01", "0.1", "1.0 (Hardest)"};
@@ -348,13 +370,13 @@ void wifi_manager_init() {
         "button:hover{background:#ff8c00;}"
         "div{padding:5px 0;}"
         // Hide redundant text inputs for dropdown fields (dropdowns handle these)
-        "input[name='bright'],input[name='diff'],input[name='rotation'],input[name='invert'],input[name='https_stats'],input[name='tz'],input[name='stats_en']{display:none;}"
+        "input[name='bright'],input[name='scrn_to'],input[name='diff'],input[name='rotation'],input[name='invert'],input[name='https_stats'],input[name='tz'],input[name='stats_en']{display:none;}"
         "</style>"
         "<script>"
         // Sync dropdown values to hidden inputs on load and change
         "function syncDropdowns(){"
         "console.log('[SYNC] Starting dropdown sync...');"
-        "var dd=['bright','diff','rotation','tz','invert','https_stats','stats_en'];"
+        "var dd=['bright','scrn_to','diff','rotation','tz','invert','https_stats','stats_en'];"
         "dd.forEach(function(n){"
         "var sel=document.querySelector('select[name=\"'+n+'\"]');"
         "var inp=document.querySelector('input[name=\"'+n+'\"]');"
@@ -375,7 +397,7 @@ void wifi_manager_init() {
         "}"
         // Log all values before form submit
         "function logFormValues(){"
-        "var dd=['bright','diff','rotation','tz','invert','https_stats','stats_en'];"
+        "var dd=['bright','scrn_to','diff','rotation','tz','invert','https_stats','stats_en'];"
         "console.log('[SUBMIT] Form values before submit:');"
         "dd.forEach(function(n){"
         "var sel=document.querySelector('select[name=\"'+n+'\"]');"
@@ -410,6 +432,7 @@ void wifi_manager_init() {
     s_wm.addParameter(s_paramBackupPoolPassword);
 
     s_wm.addParameter(s_paramBrightness);
+    s_wm.addParameter(s_paramScreenTimeout);
     s_wm.addParameter(s_paramDifficulty);
     s_wm.addParameter(s_paramRotation);
     s_wm.addParameter(s_paramTimezone);
@@ -455,6 +478,8 @@ void wifi_manager_blocking() {
         Serial.println("[WIFI] Connected!");
         Serial.printf("[WIFI] IP: %s\n", WiFi.localIP().toString().c_str());
         strncpy(s_ipAddress, WiFi.localIP().toString().c_str(), sizeof(s_ipAddress));
+
+        WiFi.setSleep(false);  // Disable power save (prevents WPA rekey issues)
 
         // Save WiFi credentials to our config
         strncpy(config->ssid, WiFi.SSID().c_str(), MAX_SSID_LENGTH);
@@ -523,6 +548,8 @@ void wifi_manager_start() {
         if (WiFi.status() == WL_CONNECTED) {
             Serial.printf("[WIFI] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
             strncpy(s_ipAddress, WiFi.localIP().toString().c_str(), sizeof(s_ipAddress));
+
+            WiFi.setSleep(false);  // Disable power save (prevents WPA rekey issues)
             
             // Configure NTP
             long gmtOffset = config->timezoneOffset * 3600L;

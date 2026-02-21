@@ -169,6 +169,22 @@ void display_show_reset_countdown(int seconds);
  */
 void display_show_reset_complete();
 
+/**
+ * Turn off display backlight (screen timeout)
+ */
+void display_set_backlight_off();
+
+/**
+ * Turn on display backlight (restore saved brightness)
+ */
+void display_set_backlight_on();
+
+/**
+ * Check if backlight is currently off
+ * @return true if backlight is off
+ */
+bool display_is_backlight_off();
+
 #else
 
 // Declarations for non-TFT builds
@@ -194,6 +210,9 @@ void display_show_ap_config(const char *ssid, const char *password, const char *
 void display_set_inverted(bool inverted);
 void display_show_reset_countdown(int seconds);
 void display_show_reset_complete();
+void display_set_backlight_off();
+void display_set_backlight_on();
+bool display_is_backlight_off();
 
 #endif // USE_DISPLAY
 

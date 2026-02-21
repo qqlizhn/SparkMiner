@@ -99,6 +99,7 @@ static uint8_t s_currentScreen = SCREEN_MINING;
 static uint8_t s_brightness = 100;
 static uint8_t s_rotation = 1;  // Current rotation (0-3)
 static bool s_needsRedraw = true;
+static bool s_backlightOff = false;
 static display_data_t s_lastData;
 
 // ============================================================
@@ -690,9 +691,12 @@ static void drawClockScreen(const display_data_t *data) {
 
     y += 70;
 
-    // Date
+    // Date - clear area first to prevent superimposition
     char dateStr[32];
     strftime(dateStr, sizeof(dateStr), "%a, %b %d %Y", &timeinfo);
+
+    int dateW = w - 2*MARGIN;
+    s_tft.fillRect(MARGIN - 4, y, dateW + 8, 20, COLOR_BG);
 
     s_tft.setTextColor(COLOR_FG);
     s_tft.setTextSize(2);
@@ -859,8 +863,30 @@ void display_init(uint8_t rotation, uint8_t brightness) {
     Serial.println("[DISPLAY] Initialized");
 }
 
+void display_set_backlight_off() {
+    if (!s_backlightOff) {
+        setBacklight(0);
+        s_backlightOff = true;
+    }
+}
+
+void display_set_backlight_on() {
+    if (s_backlightOff) {
+        setBacklight(s_brightness);
+        s_backlightOff = false;
+        s_needsRedraw = true;
+    }
+}
+
+bool display_is_backlight_off() {
+    return s_backlightOff;
+}
+
 void display_update(const display_data_t *data) {
     if (!data) return;
+
+    // Skip rendering when backlight is off (save CPU)
+    if (s_backlightOff) return;
 
     // Check if anything changed
     bool dataChanged = (data->totalHashes != s_lastData.totalHashes) ||

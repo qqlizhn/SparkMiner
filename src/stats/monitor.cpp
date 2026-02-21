@@ -28,6 +28,7 @@ static uint32_t s_lastStatsUpdate = 0;
 static uint32_t s_lastPersistSave = 0;
 static uint32_t s_lastLedUpdate = 0;
 static uint32_t s_startTime = 0;
+static uint32_t s_lastActivityTime = 0;  // Screen timeout tracking
 static bool s_earlySaveDone = false;      // Track if we've done the early save
 static uint32_t s_lastAcceptedCount = 0;  // Track shares for first-share save
 static uint32_t s_lastLedShareCount = 0;  // Track shares for LED flash
@@ -196,9 +197,14 @@ void monitor_init() {
 
     s_startTime = millis();
     s_lastPersistSave = millis();
+    s_lastActivityTime = millis();
     s_initialized = true;
 
     Serial.println("[MONITOR] Initialized");
+}
+
+void monitor_reset_activity() {
+    s_lastActivityTime = millis();
 }
 
 void monitor_task(void *param) {
@@ -230,6 +236,16 @@ void monitor_task(void *param) {
                 // Check for touch input
                 if (display_touched()) {
                     display_handle_touch();
+                }
+
+                // Screen timeout check
+                {
+                    miner_config_t *cfg = nvs_config_get();
+                    if (cfg->screenTimeout > 0 && !display_is_backlight_off()) {
+                        if (now - s_lastActivityTime >= (uint32_t)cfg->screenTimeout * 1000) {
+                            display_set_backlight_off();
+                        }
+                    }
                 }
             #endif
 

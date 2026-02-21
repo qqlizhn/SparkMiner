@@ -25,7 +25,7 @@
 typedef void (*SubmitCallback)(uint32_t sessionId, uint32_t msgId, bool accepted, const char* reason);
 
 // Fixed sizes for stratum job fields (avoid heap fragmentation from String)
-#define STRATUM_JOB_ID_LEN      16      // Job ID (usually 4-8 hex chars)
+#define STRATUM_JOB_ID_LEN      32      // Job ID (pools may send 16+ chars)
 #define STRATUM_PREVHASH_LEN    68      // Previous block hash (64 hex + null)
 #define STRATUM_COINBASE1_LEN   512     // Coinbase part 1 (variable, can be large)
 #define STRATUM_COINBASE2_LEN   256     // Coinbase part 2

@@ -19,4 +19,10 @@ void monitor_init();
  */
 void monitor_task(void *param);
 
+/**
+ * Reset screen timeout activity timer
+ * Call on user input (button press, touch) to keep screen on
+ */
+void monitor_reset_activity();
+
 #endif // MONITOR_H
