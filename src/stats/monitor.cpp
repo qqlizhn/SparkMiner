@@ -200,7 +200,7 @@ void monitor_init() {
     s_lastActivityTime = millis();
     s_initialized = true;
 
-    Serial.println("[MONITOR] Initialized");
+    Serial.printf("[MONITOR] Initialized (screen_timeout=%us)\n", config->screenTimeout);
 }
 
 void monitor_reset_activity() {
@@ -242,7 +242,11 @@ void monitor_task(void *param) {
                 {
                     miner_config_t *cfg = nvs_config_get();
                     if (cfg->screenTimeout > 0 && !display_is_backlight_off()) {
-                        if (now - s_lastActivityTime >= (uint32_t)cfg->screenTimeout * 1000) {
+                        uint32_t elapsed = now - s_lastActivityTime;
+                        uint32_t timeoutMs = (uint32_t)cfg->screenTimeout * 1000;
+                        if (elapsed >= timeoutMs) {
+                            Serial.printf("[MONITOR] Screen timeout after %lus (timeout=%us)\n",
+                                          elapsed / 1000, cfg->screenTimeout);
                             display_set_backlight_off();
                         }
                     }
