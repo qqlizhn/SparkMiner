@@ -1,0 +1,28 @@
+{
+  "ssid": "YourWiFiName",
+  "wifi_password": "YourWiFiPassword",
+
+  "pool_url": "public-pool.io",
+  "pool_port": 21496,
+  "wallet": "bc1qYourBitcoinAddressHere",
+  "pool_password": "x",
+  "worker_name": "SparkMiner",
+
+  "backup_pool_url": "",
+  "backup_pool_port": 3333,
+  "backup_wallet": "",
+  "backup_pool_password": "x",
+
+  "brightness": 100,
+  "screen_timeout": 0,
+  "rotation": 1,
+  "invert_colors": false,
+  "timezone_offset": 0,
+
+  "target_difficulty": 0.0014,
+
+  "stats_enabled": true,
+  "stats_api_url": "",
+  "stats_proxy_url": "",
+  "enable_https_stats": false
+}

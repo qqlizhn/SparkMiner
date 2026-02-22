@@ -254,6 +254,10 @@ static bool loadConfigFromFile(miner_config_t *config) {
         config->timezoneOffset = doc["timezone_offset"];
     }
 
+    if (doc.containsKey("screen_timeout")) {
+        config->screenTimeout = doc["screen_timeout"];
+    }
+
     // Miner settings (optional)
     if (doc.containsKey("target_difficulty")) {
         config->targetDifficulty = doc["target_difficulty"];
