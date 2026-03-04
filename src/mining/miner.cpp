@@ -224,7 +224,7 @@ static void calculateMerkleRoot(uint8_t *root, uint8_t *coinbaseHash, const stra
 }
 
 static void createCoinbaseHash(uint8_t *hash, const stratum_job_t *job) {
-    uint8_t coinbase[512];
+    uint8_t coinbase[1024];
     size_t cbLen = 0;
 
     // Coinbase1 (now char array)
@@ -245,6 +245,10 @@ static void createCoinbaseHash(uint8_t *hash, const stratum_job_t *job) {
 
     // Coinbase2 (now char array)
     size_t cb2Len = strlen(job->coinBase2);
+    if (cbLen + cb2Len / 2 > sizeof(coinbase)) {
+        Serial.printf("[MINER] ERROR: Coinbase exceeds buffer (%d bytes)\n", cbLen + cb2Len / 2);
+        return;
+    }
     hexToBytes(&coinbase[cbLen], job->coinBase2, cb2Len);
     cbLen += cb2Len / 2;
 

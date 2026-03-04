@@ -209,8 +209,16 @@ static void parseMiningNotify(const String &line) {
 
     if (p0) strncpy(job.jobId, p0, STRATUM_JOB_ID_LEN - 1);
     if (p1) strncpy(job.prevHash, p1, STRATUM_PREVHASH_LEN - 1);
-    if (p2) strncpy(job.coinBase1, p2, STRATUM_COINBASE1_LEN - 1);
-    if (p3) strncpy(job.coinBase2, p3, STRATUM_COINBASE2_LEN - 1);
+    if (p2) {
+        strncpy(job.coinBase1, p2, STRATUM_COINBASE1_LEN - 1);
+        if (strlen(p2) >= STRATUM_COINBASE1_LEN)
+            Serial.printf("[STRATUM] WARNING: coinBase1 truncated (%d chars, max %d)\n", strlen(p2), STRATUM_COINBASE1_LEN - 1);
+    }
+    if (p3) {
+        strncpy(job.coinBase2, p3, STRATUM_COINBASE2_LEN - 1);
+        if (strlen(p3) >= STRATUM_COINBASE2_LEN)
+            Serial.printf("[STRATUM] WARNING: coinBase2 truncated (%d chars, max %d)\n", strlen(p3), STRATUM_COINBASE2_LEN - 1);
+    }
     if (p5) strncpy(job.version, p5, STRATUM_FIELD_LEN - 1);
     if (p6) strncpy(job.nbits, p6, STRATUM_FIELD_LEN - 1);
     if (p7) strncpy(job.ntime, p7, STRATUM_FIELD_LEN - 1);

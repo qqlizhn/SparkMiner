@@ -696,7 +696,7 @@ Contributions are welcome! Please:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+GPL v3 License - see [LICENSE](LICENSE) file for details.
 
 ---
 
