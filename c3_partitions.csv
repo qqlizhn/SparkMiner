@@ -1,0 +1,7 @@
+# SparkMiner ESP32-C3 partitions
+# Factory type: bootloader always boots app0, ignores stale otadata
+# Fits in both 2MB and 4MB flash chips
+# Name,   Type, SubType,  Offset,   Size,
+nvs,      data, nvs,      0x9000,   0x5000,
+app0,     app,  factory,  0x10000,  0x140000,
+spiffs,   data, spiffs,   0x150000, 0x60000,
