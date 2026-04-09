@@ -339,9 +339,17 @@ void setup() {
     // On ESP32-S3, Serial only becomes true when USB host enumerates CDC
     // Without timeout, device would block forever if no USB connected
     unsigned long serialWaitStart = millis();
+    #if defined(ARDUINO_USB_CDC_ON_BOOT) && ARDUINO_USB_CDC_ON_BOOT
+    // USB CDC: wait longer so monitor can reconnect after USB re-enumeration
+    while (!Serial && (millis() - serialWaitStart < 10000)) {
+        delay(10);
+    }
+    delay(500);  // Extra settle time after Serial ready
+    #else
     while (!Serial && (millis() - serialWaitStart < 5000)) {
         delay(10);
     }
+    #endif
     Serial.flush();
     
     // Debug output  
