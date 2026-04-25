@@ -354,6 +354,118 @@
     // SHA Implementation: Defined in platformio.ini (USE_HARDWARE_SHA=1)
 
 // ============================================================
+// ESP32-C3 with ST7565 Display (128x64 SPI LCD)
+// Compact miner with monochrome SPI display
+// ============================================================
+#elif defined(ESP32_C3_ST7565)
+    #define BOARD_NAME "ESP32-C3-ST7565"
+
+    #define USE_DISPLAY 0
+    #define USE_OLED_DISPLAY 1
+
+    // ST7565 configuration (128x64 SPI)
+    #define OLED_DRIVER_ST7565 1
+    #define OLED_WIDTH  128
+    #define OLED_HEIGHT 64
+    // SPI CS/DC/RST pins (adjust to your wiring)
+    #define OLED_CS_PIN  7
+    #define OLED_DC_PIN  8
+    #define OLED_RST_PIN 9
+
+    #ifndef BUTTON_PIN
+        #define BUTTON_PIN 3
+    #endif
+    #define BUTTON_ACTIVE_LOW 1
+
+    // Single-core RISC-V - software SHA only
+
+// ============================================================
+// ESP32-S3 with ST7565 Display (128x64 SPI LCD)
+// Higher performance with monochrome SPI display
+// ============================================================
+#elif defined(ESP32_S3_ST7565)
+    #define BOARD_NAME "ESP32-S3-ST7565"
+
+    #define USE_DISPLAY 0
+    #define USE_OLED_DISPLAY 1
+
+    // ST7565 configuration (128x64 SPI)
+    #define OLED_DRIVER_ST7565 1
+    #define OLED_WIDTH  128
+    #define OLED_HEIGHT 64
+    // SPI CS/DC/RST pins (adjust to your wiring)
+    #define OLED_CS_PIN  10
+    #define OLED_DC_PIN  11
+    #define OLED_RST_PIN 12
+
+    #ifndef BUTTON_PIN
+        #define BUTTON_PIN 0
+    #endif
+    #define BUTTON_ACTIVE_LOW 1
+
+    // SHA Implementation: Defined in platformio.ini (USE_HARDWARE_SHA=1)
+
+// ============================================================
+// ESP32-C3 with ST7567 Display (128x64 SPI LCD)
+// Compact miner with monochrome SPI display
+// ============================================================
+#elif defined(ESP32_C3_ST7567)
+    #define BOARD_NAME "ESP32-C3-ST7567"
+
+    #define USE_DISPLAY 0
+    #define USE_OLED_DISPLAY 1
+
+    // ST7567 configuration (128x64 SPI)
+    #define OLED_DRIVER_ST7567 1
+    #define OLED_WIDTH  128
+    #define OLED_HEIGHT 64
+    // XIAO ESP32-C3 HW SPI: SCK=GPIO8, MOSI=GPIO10, MISO=GPIO9
+    // CS/DC/RST must NOT use GPIO8/9/10
+    #define OLED_CS_PIN   7  // D5 - chip select
+    #define OLED_DC_PIN   4  // D2 - data/command (was 3, conflicted with BUTTON)
+    #define OLED_RST_PIN  2  // D0 - reset
+    // SW SPI: explicitly specify SCK and MOSI to avoid board default ambiguity
+    #define OLED_SCK_PIN  8  // D8 - SPI clock
+    #define OLED_MOSI_PIN 10 // D10 - SPI data
+
+    #ifndef BUTTON_PIN
+        #define BUTTON_PIN 3  // D1 - boot button (was conflicting with old DC pin)
+    #endif
+    #define BUTTON_ACTIVE_LOW 1
+
+    // Single-core RISC-V - software SHA only
+
+// ============================================================
+// ESP32-S3 with ST7567 Display (128x64 SPI LCD)
+// Higher performance with monochrome SPI display
+// ============================================================
+#elif defined(ESP32_S3_ST7567)
+    #define BOARD_NAME "ESP32-S3-ST7567"
+
+    #define USE_DISPLAY 0
+    #define USE_OLED_DISPLAY 1
+
+    // ST7567 configuration (128x64 SPI)
+    #define OLED_DRIVER_ST7567 1
+    #define OLED_WIDTH  128
+    #define OLED_HEIGHT 64
+    // ESP32-S3-DevKitC HW SPI2: SCK=GPIO12, MOSI=GPIO11, MISO=GPIO13
+    // CS/DC/RST must NOT use GPIO11/12/13
+    #define OLED_CS_PIN  10   // chip select (SPI SS, SW controlled)
+    #define OLED_DC_PIN  4    // data/command - free GPIO
+    #define OLED_RST_PIN 5    // reset - free GPIO
+    // SW SPI: explicitly specify SCK and MOSI
+    #define OLED_SCK_PIN  12  // SPI clock
+    #define OLED_MOSI_PIN 11  // SPI data
+
+    #ifndef BUTTON_PIN
+        #define BUTTON_PIN 0
+    #endif
+    #define BUTTON_ACTIVE_LOW 1
+
+    // SHA Implementation: Defined in platformio.ini (USE_HARDWARE_SHA=1)
+
+// ============================================================
 // Default - Generic ESP32
 // ============================================================
 #else

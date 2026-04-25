@@ -6,6 +6,7 @@
  * - 128x64 SSD1306 (I2C or SPI)
  * - 128x32 SSD1306 (I2C)
  * - 72x40 SSD1306 (0.42" displays)
+ * - 128x64 ST7565 (SPI, define OLED_DRIVER_ST7565=1)
  *
  * GPL v3 License
  */

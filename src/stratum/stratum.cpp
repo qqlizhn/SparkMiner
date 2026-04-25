@@ -292,6 +292,7 @@ static void handleServerMessage(WiFiClient &client) {
                     dbg("[STRATUM] Share rejected: %s\n", reason);
                     Serial.printf("[STRATUM] Share rejected: %s\n", reason);
                 }
+                s_lastActivity = millis();  // Pool responded = connection is alive
 
                 // Call callback if set
                 if (s_pendingResponses[i].callback) {
@@ -318,10 +319,16 @@ static void handleServerMessage(WiFiClient &client) {
             parseMiningNotify(line);
         } else if (strcmp(method, "mining.set_difficulty") == 0) {
             parseSetDifficulty(line);
+        } else if (strcmp(method, "mining.pong") == 0) {
+            s_lastActivity = millis();  // Pool responded to ping
+            dbg("[STRATUM] Pong received\n");
         } else {
             dbg("[STRATUM] Unknown method: %s\n", method);
         }
     }
+
+    // Any message from pool = connection alive
+    s_lastActivity = millis();
 }
 
 // Helper: Read lines until we get a response with matching ID (or timeout)
@@ -669,13 +676,30 @@ void stratum_task(void *param) {
 
         // Send keepalive if idle
         if (millis() - s_lastSubmit > KEEPALIVE_MS) {
+            // Check if TCP connection is still alive before sending
+            if (!client.connected()) {
+                Serial.println("[STRATUM] TCP connection lost (keepalive check)");
+                miner_stop();
+                client.stop();
+                s_isConnected = false;
+                continue;
+            }
             char msg[STRATUM_MSG_BUFFER];
             uint32_t keepId = getNextId();
+            // Use mining.ping as keepalive - pools respond with pong, confirming connection
             snprintf(msg, sizeof(msg),
-                "{\"id\":%lu,\"method\":\"mining.suggest_difficulty\",\"params\":[%.10g]}",
-                keepId, DESIRED_DIFFICULTY);
-            sendMessage(client, msg);
-            s_lastSubmit = millis();
+                "{\"id\":%lu,\"method\":\"mining.ping\",\"params\":[]}",
+                keepId);
+            if (sendMessage(client, msg)) {
+                s_lastSubmit = millis();
+                s_lastActivity = millis();
+                dbg("[STRATUM] Keepalive ping sent\n");
+            } else {
+                Serial.println("[STRATUM] Keepalive send failed, reconnecting");
+                miner_stop();
+                client.stop();
+                s_isConnected = false;
+            }
         }
 
         // Check for inactivity
