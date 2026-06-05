@@ -21,6 +21,7 @@
 #define PERSIST_STATS_MS    3600000 // 1 hour - save to flash for persistence
 #define EARLY_SAVE_MS       300000  // 5 minutes - initial save interval before first hourly
 #define LED_UPDATE_MS       50      // 50ms for smooth LED animations
+#define AUTO_SCREEN_MS      5000    // 5 seconds per screen (auto-cycle)
 
 static bool s_initialized = false;
 static uint32_t s_lastDisplayUpdate = 0;
@@ -29,6 +30,7 @@ static uint32_t s_lastPersistSave = 0;
 static uint32_t s_lastLedUpdate = 0;
 static uint32_t s_startTime = 0;
 static uint32_t s_lastActivityTime = 0;  // Screen timeout tracking
+static uint32_t s_lastScreenCycle = 0;   // Auto screen cycling
 static bool s_earlySaveDone = false;      // Track if we've done the early save
 static uint32_t s_lastAcceptedCount = 0;  // Track shares for first-share save
 static uint32_t s_lastLedShareCount = 0;  // Track shares for LED flash
@@ -232,6 +234,14 @@ void monitor_task(void *param) {
 
             #if (USE_DISPLAY || USE_OLED_DISPLAY || USE_EINK_DISPLAY)
                 display_update(&displayData);
+
+                // Auto screen cycling
+                #if USE_OLED_DISPLAY
+                if (now - s_lastScreenCycle >= AUTO_SCREEN_MS) {
+                    display_next_screen();
+                    s_lastScreenCycle = now;
+                }
+                #endif
 
                 // Check for touch input
                 if (display_touched()) {

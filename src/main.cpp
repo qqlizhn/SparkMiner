@@ -34,6 +34,7 @@ extern "C" {
 #include "config/wifi_manager.h"
 #include "stats/monitor.h"
 #include "display/display.h"
+#include "gps/gps.h"
 
 // Task handles
 TaskHandle_t miner0Task = NULL;
@@ -423,6 +424,11 @@ void setup() {
 
     // Initialize monitor (live stats - display already initialized)
     monitor_init();
+
+    // Initialize GPS module (GY-NEO6MV2 on UART1: RX=GPIO4, TX=GPIO5)
+    #ifdef GPS_ENABLED
+        gps_init();
+    #endif
 
     Serial.println("[INIT] Setup complete");
 

@@ -420,9 +420,9 @@
     #define OLED_WIDTH  128
     #define OLED_HEIGHT 64
     // XIAO ESP32-C3 HW SPI: SCK=GPIO8, MOSI=GPIO10, MISO=GPIO9
-    // CS/DC/RST must NOT use GPIO8/9/10
+    // CS/DC/RST must avoid GPIO8/10; GPIO9(MISO) is safe when MISO unused
     #define OLED_CS_PIN   7  // D5 - chip select
-    #define OLED_DC_PIN   4  // D2 - data/command (was 3, conflicted with BUTTON)
+    #define OLED_DC_PIN   9  // D9 - data/command (MISO pin, unused in write-only SPI)
     #define OLED_RST_PIN  2  // D0 - reset
     // SW SPI: explicitly specify SCK and MOSI to avoid board default ambiguity
     #define OLED_SCK_PIN  8  // D8 - SPI clock

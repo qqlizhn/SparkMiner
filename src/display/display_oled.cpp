@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <board_config.h>
 #include "display/display_oled.h"
+#include "gps/gps.h"
 
 #if USE_OLED_DISPLAY
 
@@ -65,7 +66,12 @@
 // Screen cycling (OLED has limited space, fewer screens)
 #define OLED_SCREEN_MAIN    0
 #define OLED_SCREEN_STATS   1
-#define OLED_SCREEN_COUNT   2
+#ifdef GPS_ENABLED
+    #define OLED_SCREEN_GPS     2
+    #define OLED_SCREEN_COUNT   3
+#else
+    #define OLED_SCREEN_COUNT   2
+#endif
 
 // ============================================================
 // ST7567 Custom Raw SPI Driver (replaces U8g2 for ST7567)
@@ -492,6 +498,84 @@ static void drawMainScreen(const display_data_t *data) {
 #endif // OLED_DRIVER_ST7567
 }
 
+#ifdef GPS_ENABLED
+static void drawGpsScreen() {
+#if defined(OLED_DRIVER_ST7567)
+    char buf[32];
+    gps_data_t gps;
+    gps_get_data(&gps);
+
+    st7_clear();
+
+    // Row 0: title + fix indicator
+    st7_draw_str(0, 0, "GPS");
+    const char *fixStr = gps.valid ? "FIX" : "---";
+    st7_draw_str(OLED_WIDTH - st7_str_width(fixStr), 0, fixStr);
+    st7_draw_hline(0, 8, OLED_WIDTH);
+
+    if (gps.valid) {
+        snprintf(buf, sizeof(buf), "Lat:%.5f", gps.latitude);
+        st7_draw_str(0, 10, buf);
+
+        snprintf(buf, sizeof(buf), "Lon:%.5f", gps.longitude);
+        st7_draw_str(0, 19, buf);
+
+        snprintf(buf, sizeof(buf), "Alt:%.0fm", gps.altitude);
+        st7_draw_str(0, 28, buf);
+        snprintf(buf, sizeof(buf), "Sat:%u", gps.satellites);
+        st7_draw_str(OLED_WIDTH - st7_str_width(buf), 28, buf);
+
+        snprintf(buf, sizeof(buf), "Spd:%.1fkm/h", gps.speed);
+        st7_draw_str(0, 37, buf);
+
+        snprintf(buf, sizeof(buf), "HDOP:%.2f", gps.hdop / 100.0f);
+        st7_draw_str(0, 46, buf);
+
+        snprintf(buf, sizeof(buf), "%02d:%02d:%02d UTC", gps.hour, gps.minute, gps.second);
+        st7_draw_str(0, 55, buf);
+    } else {
+        st7_draw_str(0, 24, "Searching...");
+        snprintf(buf, sizeof(buf), "Sat:%u", gps.satellites);
+        st7_draw_str(0, 40, buf);
+    }
+
+    st7_send_buffer();
+#else
+    char buf[32];
+    gps_data_t gps;
+    gps_get_data(&gps);
+
+    s_u8g2.clearBuffer();
+    s_u8g2.setFont(u8g2_font_6x10_tf);
+
+    s_u8g2.drawStr(0, 8, "GPS");
+    const char *fixStr = gps.valid ? "FIX" : "---";
+    s_u8g2.drawStr(OLED_WIDTH - s_u8g2.getStrWidth(fixStr), 8, fixStr);
+    s_u8g2.drawHLine(0, 10, OLED_WIDTH);
+
+    if (gps.valid) {
+        snprintf(buf, sizeof(buf), "Lat:%.5f", gps.latitude);
+        s_u8g2.drawStr(0, 22, buf);
+
+        snprintf(buf, sizeof(buf), "Lon:%.5f", gps.longitude);
+        s_u8g2.drawStr(0, 34, buf);
+
+        snprintf(buf, sizeof(buf), "Alt:%.0fm Sat:%u", gps.altitude, gps.satellites);
+        s_u8g2.drawStr(0, 46, buf);
+
+        snprintf(buf, sizeof(buf), "%02d:%02d:%02d UTC", gps.hour, gps.minute, gps.second);
+        s_u8g2.drawStr(0, 58, buf);
+    } else {
+        s_u8g2.drawStr(0, 32, "Searching...");
+        snprintf(buf, sizeof(buf), "Sat: %u", gps.satellites);
+        s_u8g2.drawStr(0, 46, buf);
+    }
+
+    s_u8g2.sendBuffer();
+#endif
+}
+#endif // GPS_ENABLED
+
 static void drawStatsScreen(const display_data_t *data) {
 #if defined(OLED_DRIVER_ST7567)
     char buf[32];
@@ -633,6 +717,11 @@ void oled_display_update(const display_data_t *data) {
         case OLED_SCREEN_STATS:
             drawStatsScreen(data);
             break;
+#ifdef GPS_ENABLED
+        case OLED_SCREEN_GPS:
+            drawGpsScreen();
+            break;
+#endif
         default:
             drawMainScreen(data);
             break;
